@@ -85,32 +85,73 @@ export default class MessageController {
   static async storeMessage(req: AuthRequest, res: Response) {
     try {
       const senderId = req.user!.id;
-      const { recipientId, encryptedContent } = req.body;
+      const { recipientId, content, timestamp } = req.body;
       
-      if (!recipientId || !encryptedContent) {
+      if (!recipientId || !content) {
         return res.status(400).json({ 
           success: false, 
-          error: 'Recipient ID and encrypted content are required' 
+          error: 'Recipient ID and content are required' 
         });
       }
       
       // Store the message
-      const messageId = await MessageModel.storeMessage(
+      const message = await MessageModel.storeMessage(
         senderId,
         recipientId,
-        encryptedContent
+        content
       );
       
       return res.status(200).json({
         success: true,
-        data: { messageId },
-        message: 'Message stored for offline delivery'
+        data: { id: message.id },
+        message: 'Message stored successfully'
       });
     } catch (error) {
       console.error('Store message error:', error);
       return res.status(500).json({ 
         success: false, 
         error: 'Failed to store message' 
+      });
+    }
+  }
+  
+  /**
+   * Store a received P2P message
+   * @param req Request
+   * @param res Response
+   */
+  static async storeReceivedMessage(req: AuthRequest, res: Response) {
+    try {
+      const recipientId = req.user!.id;
+      const { senderId, content, timestamp } = req.body;
+      
+      if (!senderId || !content) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Sender ID and content are required' 
+        });
+      }
+      
+      // Store the message
+      const message = await MessageModel.storeMessage(
+        senderId,
+        recipientId,
+        content
+      );
+      
+      // Mark as delivered since it was received via P2P
+      await MessageModel.markAsDelivered([message.id]);
+      
+      return res.status(200).json({
+        success: true,
+        data: { id: message.id },
+        message: 'P2P message stored successfully'
+      });
+    } catch (error) {
+      console.error('Store received P2P message error:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Failed to store received P2P message' 
       });
     }
   }

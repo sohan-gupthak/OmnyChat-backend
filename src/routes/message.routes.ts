@@ -7,6 +7,7 @@ const router = Router();
 // Protected routes
 router.get('/offline', authenticate, MessageController.getOfflineMessages);
 router.post('/mark-read', authenticate, MessageController.markMessagesAsRead);
-router.post('/store', authenticate, MessageController.storeMessage);
+router.post('/', authenticate, MessageController.storeMessage);
+router.post('/received', authenticate, MessageController.storeReceivedMessage);
 
 export default router;

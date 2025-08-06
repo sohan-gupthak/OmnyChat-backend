@@ -84,6 +84,7 @@ export interface ChatMessage {
   recipient: number;
   encryptedContent: string;
   timestamp: number;
+  id?: number;
 }
 
 // Contact types

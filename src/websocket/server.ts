@@ -247,15 +247,33 @@ async function handleMessage(ws: WS, payload: ChatMessage) {
       }
     }));
   } else {
-    // Recipient is offline, store message for later delivery
-    try {
-      await MessageModel.storeMessage(
-        sender.userId,
-        payload.recipient,
-        payload.encryptedContent
-      );
-      
-      // Send storage confirmation to sender
+    // Recipient is offline
+    // Only store if the message doesn't already have an ID (meaning it wasn't already stored)
+    if (!payload.id) {
+      try {
+        await MessageModel.storeMessage(
+          sender.userId,
+          payload.recipient,
+          payload.encryptedContent
+        );
+        
+        // Send storage confirmation to sender
+        ws.send(JSON.stringify({
+          type: 'message',
+          payload: {
+            stored: true,
+            recipient: payload.recipient,
+            timestamp: payload.timestamp
+          }
+        }));
+      } catch (error) {
+        console.error('Store message error:', error);
+        ws.send(JSON.stringify({
+          type: 'error',
+          payload: { message: 'Failed to store message' }
+        }));
+      }
+    } else {
       ws.send(JSON.stringify({
         type: 'message',
         payload: {
@@ -263,12 +281,6 @@ async function handleMessage(ws: WS, payload: ChatMessage) {
           recipient: payload.recipient,
           timestamp: payload.timestamp
         }
-      }));
-    } catch (error) {
-      console.error('Store message error:', error);
-      ws.send(JSON.stringify({
-        type: 'error',
-        payload: { message: 'Failed to store message' }
       }));
     }
   }

@@ -6,16 +6,16 @@ import { Message } from '../types';
  */
 export default class MessageModel {
   /**
-   * Store an offline message
+   * Store a message
    * @param senderId Sender user ID
    * @param recipientId Recipient user ID
-   * @param encryptedContent Encrypted message content
+   * @param content Message content
    * @returns The stored message
    */
   static async storeMessage(
     senderId: number,
     recipientId: number,
-    encryptedContent: string
+    content: string
   ): Promise<Message> {
     const query = `
       INSERT INTO messages (sender_id, recipient_id, encrypted_content)
@@ -23,7 +23,7 @@ export default class MessageModel {
       RETURNING *
     `;
     
-    const result = await pool.query(query, [senderId, recipientId, encryptedContent]);
+    const result = await pool.query(query, [senderId, recipientId, content]);
     return result.rows[0];
   }
   
