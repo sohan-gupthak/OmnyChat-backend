@@ -105,4 +105,24 @@ export default class MessageModel {
     const result = await pool.query(query);
     return result.rowCount || 0;
   }
+  
+  /**
+   * Get conversation history between two users
+   * @param userId Current user ID
+   * @param contactId Contact user ID
+   * @param limit Maximum number of messages to return
+   * @returns Array of messages
+   */
+  static async getConversationHistory(userId: number, contactId: number, limit: number = 50): Promise<Message[]> {
+    const query = `
+      SELECT * FROM messages
+      WHERE (sender_id = $1 AND recipient_id = $2)
+         OR (sender_id = $2 AND recipient_id = $1)
+      ORDER BY created_at DESC
+      LIMIT $3
+    `;
+    
+    const result = await pool.query(query, [userId, contactId, limit]);
+    return result.rows;
+  }
 }

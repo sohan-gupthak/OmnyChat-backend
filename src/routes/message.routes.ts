@@ -6,6 +6,7 @@ const router = Router();
 
 // Protected routes
 router.get('/offline', authenticate, MessageController.getOfflineMessages);
+router.get('/conversation/:contactId', authenticate, MessageController.getConversationHistory);
 router.post('/mark-read', authenticate, MessageController.markMessagesAsRead);
 router.post('/', authenticate, MessageController.storeMessage);
 router.post('/received', authenticate, MessageController.storeReceivedMessage);

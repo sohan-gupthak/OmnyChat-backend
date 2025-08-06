@@ -1,11 +1,64 @@
 import { Response } from 'express';
 import { AuthRequest } from '../types';
 import MessageModel from '../models/message.model';
+import pool from '../config/database';
 
 /**
  * Controller for handling messages
  */
 export default class MessageController {
+  /**
+   * Get conversation history between the current user and a contact
+   * @param req Request with contactId parameter
+   * @param res Response
+   */
+  static async getConversationHistory(req: AuthRequest, res: Response) {
+    try {
+      const userId = req.user!.id;
+      const contactId = parseInt(req.params.contactId);
+      
+      if (isNaN(contactId)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid contact ID'
+        });
+      }
+      
+      const messages = await MessageModel.getConversationHistory(userId, contactId);
+      
+      // Mark any undelivered messages as delivered
+      const undeliveredMessages = messages.filter(msg => 
+        msg.recipient_id === userId && !msg.is_delivered
+      );
+      
+      if (undeliveredMessages.length > 0) {
+        await MessageModel.markAsDelivered(undeliveredMessages.map(msg => msg.id));
+      }
+      
+      return res.status(200).json({
+        success: true,
+        data: {
+          messages: messages.map(msg => ({
+            id: msg.id,
+            sender: msg.sender_id,
+            recipient: msg.recipient_id,
+            content: msg.encrypted_content,
+            timestamp: msg.created_at,
+            isDelivered: msg.is_delivered,
+            deliveredAt: msg.delivered_at
+          }))
+        },
+        message: 'Conversation history retrieved successfully'
+      });
+    } catch (error) {
+      console.error('Get conversation history error:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to retrieve conversation history'
+      });
+    }
+  }
+  
   /**
    * Get offline messages for a user
    * @param req Request
